@@ -29,7 +29,7 @@ md"""# Develop a corpus-specific parser with Kanones"""
 # ╔═╡ 6f78ed85-ddd9-4034-9622-b574dc97368c
 md"""
 !!! tip "How to use this notebook"
-    - keep a clone of Kanones adjacent to this directory
+    - keep a clone of `Kanones.jl` adjacent to this directory
     - edit a local Kanones data set in the `morphology` directory of this repository
     - when you've added data to a Kanones data set, you can use the following button to rebuild the parser (*Slow....!*)
     - you can select individual passages to analyze (*Fast!*)
@@ -92,7 +92,7 @@ c = fromcex(f, CitableTextCorpus, FileReader)
 psgsmenu = map(p -> p.urn => passagecomponent(p.urn), c.passages)
 
 # ╔═╡ e34ac084-ef3f-4584-afe5-8dde95566b06
-opts = vcat(["" => "",  "All" => "All passages in corpus"], psgsmenu)
+opts = vcat(["" => ""], psgsmenu)
 
 # ╔═╡ c38b1a6d-a07b-40f8-965e-719f5dd91fa1
 md"""*Select a passage to analyze:* $(@bind psg Select(opts))"""
@@ -143,6 +143,19 @@ end
 # ╔═╡ ce22ed61-b479-49ee-b107-b45da7ca291c
 # ╠═╡ show_logs = false
 analyzedlexical = isnothing(c) || isnothing(parser) ? nothing : parsecorpus(tcorpus, parser)
+
+# ╔═╡ 044f9c8a-f84a-491e-8114-b0ac248dfcda
+corpusfails = filter(atkn -> isempty(atkn.analyses), analyzedlexical.analyses)
+
+# ╔═╡ 1bf605a0-e97a-4e5f-8718-6abcd6bf1738
+corpussuccesses = filter(atkn -> ! isempty(atkn.analyses), analyzedlexical.analyses)
+
+# ╔═╡ 94e6a1a3-3b9d-4115-9240-a0291e3bf860
+md"""Out of **$(length(analyzedlexical.analyses))** tokens in the corpus:
+
+- parsed **$(length(corpussuccesses))**
+- failed on **$(length(corpusfails))**
+"""
 
 # ╔═╡ ddc7cdac-d6c8-4ca7-b3b5-d9f68787cbbe
 parses = parselist(vocab, parser)
@@ -901,6 +914,7 @@ version = "17.4.0+0"
 # ╟─8ec3101b-4445-4062-af21-9e8dc28be17d
 # ╟─9a044052-7bfe-11ee-28d8-89db09636def
 # ╟─6f78ed85-ddd9-4034-9622-b574dc97368c
+# ╟─9620ac7f-c73f-4fd0-b1a9-19c46c225fdd
 # ╟─ce48c3fd-6fe2-4b3e-a9a6-f6839ffb2772
 # ╟─d554f83e-ceb2-497b-97eb-f887623bbc6d
 # ╟─402de721-d855-4635-973f-41afd936906a
@@ -909,18 +923,20 @@ version = "17.4.0+0"
 # ╟─274ff2ec-d541-4abd-8d4b-803f4f154d9d
 # ╟─63241469-9aca-4d70-9e8e-83d101347e32
 # ╟─90d215ef-182c-4e04-8f7d-17b9b1bf5845
-# ╟─9620ac7f-c73f-4fd0-b1a9-19c46c225fdd
+# ╟─94e6a1a3-3b9d-4115-9240-a0291e3bf860
 # ╟─26614bb2-dc3c-4a41-8712-374487e8743e
 # ╟─ce22ed61-b479-49ee-b107-b45da7ca291c
 # ╟─ddc7cdac-d6c8-4ca7-b3b5-d9f68787cbbe
 # ╠═1ea76ace-22b3-45c8-82aa-87c55b8cfa37
 # ╠═7ea41d42-a2a7-4122-be8f-2f6435289458
+# ╠═044f9c8a-f84a-491e-8114-b0ac248dfcda
+# ╠═1bf605a0-e97a-4e5f-8718-6abcd6bf1738
 # ╟─5d4da4bc-97e3-4778-97d7-849e923e307d
-# ╠═a709069d-cb9d-4ba3-83db-b2870917bdcc
+# ╟─a709069d-cb9d-4ba3-83db-b2870917bdcc
 # ╟─8426c84f-83cf-48ed-b4f9-9b323ccbc9b1
 # ╟─b635b3b9-8756-4ad8-a9ca-316802a7b611
 # ╟─d780227b-543f-480b-bf41-3eb02da67515
-# ╟─e34ac084-ef3f-4584-afe5-8dde95566b06
+# ╠═e34ac084-ef3f-4584-afe5-8dde95566b06
 # ╟─b16a3bdf-d1a9-4d88-9e22-e70a9608b7fd
 # ╟─d036d270-576a-4938-92e4-dc9b2aa583d1
 # ╟─1331e326-1f10-4e81-841c-8a922e54fc2c
