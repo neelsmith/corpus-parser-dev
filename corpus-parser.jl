@@ -20,7 +20,29 @@ begin
 	using Kanones
 	using Orthography, PolytonicGreek
 	using PlutoUI
+
+	using StatsBase, OrderedCollections
+	
 	md"""*Unhide this cell to see the Julia environment.*"""
+end
+
+# ╔═╡ 76d88b30-2bf4-438c-bb9e-df23741d250d
+nbversion = 1.0;
+
+# ╔═╡ 432adc07-d8f4-40d4-a820-c09a1eac13c0
+md"""*Notebook version*:  **$(nbversion).**"""
+
+# ╔═╡ 9b009245-207f-4ee7-962c-515b54c879f6
+md"""*See release notes*: $(@bind showrelease CheckBox())"""
+
+# ╔═╡ 292b5fb3-8df4-4090-918f-ec3507faff60
+if showrelease
+md"""
+
+- **1.0.0**: initial release.
+
+"""
+	
 end
 
 # ╔═╡ 9a044052-7bfe-11ee-28d8-89db09636def
@@ -42,11 +64,14 @@ md"""
 md"""## Analyze specific passages of text
 """
 
-# ╔═╡ 274ff2ec-d541-4abd-8d4b-803f4f154d9d
-md"""**Unanalyzed terms**:"""
-
 # ╔═╡ 90d215ef-182c-4e04-8f7d-17b9b1bf5845
-md"""## Summarize corpus"""
+md"""## Summarize coverage of corpus"""
+
+# ╔═╡ 83631385-17fc-4293-8a49-2a94418bc2b1
+html"""
+<br/><br/><br/><br/><br/>
+<br/><br/><br/><br/><br/>
+"""
 
 # ╔═╡ 26614bb2-dc3c-4a41-8712-374487e8743e
 md"""!!! note "Parsing results"
@@ -63,15 +88,6 @@ function parselist(vocab, parser)
 		push!(results, (wd, parsetoken(wd, parser)))
 	end
 	results
-end
-
-# ╔═╡ b635b3b9-8756-4ad8-a9ca-316802a7b611
-"""Find lexicon for a passage identified by URN `u` in tokenized corpus `corp`."""
-function passageVocab(u::CtsUrn, corp::CitableTextCorpus)
-	psgs = filter(corp.passages) do p
-		startswith(passagecomponent(p.urn), passagecomponent(u))
-	end
-	map(p -> p.text, psgs)  |> unique |> sort
 end
 
 # ╔═╡ b16a3bdf-d1a9-4d88-9e22-e70a9608b7fd
@@ -100,6 +116,15 @@ md"""*Select a passage to analyze:* $(@bind psg Select(opts))"""
 # ╔═╡ 1784895d-7037-44d2-910f-e3339fd3b124
 ortho =  literaryGreek()
 
+# ╔═╡ b635b3b9-8756-4ad8-a9ca-316802a7b611
+"""Find lexicon for a passage identified by URN `u` in tokenized corpus `corp`."""
+function passageVocab(u::CtsUrn, corp::CitableTextCorpus)
+	psgs = filter(corp.passages) do p
+		startswith(passagecomponent(p.urn), passagecomponent(u))
+	end
+	PolytonicGreek.sortWords(map(p -> p.text, psgs)  |> unique, ortho)
+end
+
 # ╔═╡ 1331e326-1f10-4e81-841c-8a922e54fc2c
 tcorpus = isnothing(c) ? nothing : tokenizedcorpus(c,ortho, filterby = LexicalToken())
 
@@ -109,6 +134,9 @@ vocab = if isa(psg, String)
 else
 	passageVocab(psg, tcorpus)
 end
+
+# ╔═╡ 274ff2ec-d541-4abd-8d4b-803f4f154d9d
+isempty(vocab) ? nothing : md"""**Unanalyzed terms**:"""
 
 # ╔═╡ fa655108-3565-49a8-bd29-237f5a2960c3
 kroot = joinpath(pwd() |> dirname, "Kanones.jl")
@@ -151,10 +179,10 @@ corpusfails = filter(atkn -> isempty(atkn.analyses), analyzedlexical.analyses)
 corpussuccesses = filter(atkn -> ! isempty(atkn.analyses), analyzedlexical.analyses)
 
 # ╔═╡ 94e6a1a3-3b9d-4115-9240-a0291e3bf860
-md"""Out of **$(length(analyzedlexical.analyses))** tokens in the corpus:
+md"""Total of **$(length(analyzedlexical.analyses))** lexical tokens in the corpus:
 
-- parsed **$(length(corpussuccesses))**
-- failed on **$(length(corpusfails))**
+- parsed **$(length(corpussuccesses))** words (**$(round(length(corpussuccesses) / length(analyzedlexical) * 100))%**) 
+- failed on **$(length(corpusfails))** words (**$(round(length(corpusfails) / length(analyzedlexical) * 100))%**) 
 """
 
 # ╔═╡ ddc7cdac-d6c8-4ca7-b3b5-d9f68787cbbe
@@ -173,13 +201,19 @@ end
 successes = filter(pr -> ! isempty(pr[2]), parses)
 
 # ╔═╡ 058200c6-7ae1-48bc-8547-3163eec4855e
-md""" 
+if isempty(vocab)
+	nothing
+else
+	md""" 
+### Section $(passagecomponent(psg))
+	
 Out of  **$(length(vocab))** distinct lexical tokens:
 
 
 - parsed **$(length(successes))**
 - failed to parse **$(length(failed))**
 """
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -188,18 +222,22 @@ CitableBase = "d6f014bd-995c-41bd-9893-703339864534"
 CitableCorpus = "cf5ac11a-93ef-4a1a-97a3-f6af101603b5"
 CitableText = "41e66566-473b-49d4-85b7-da83b66615d8"
 Kanones = "107500f9-53d4-4696-8485-0747242ad8bc"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Orthography = "0b4c9448-09b0-4e78-95ea-3eb3328be36d"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PolytonicGreek = "72b824a7-2b4a-40fa-944c-ac4f345dc63a"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 CitableBase = "~10.3.1"
 CitableCorpus = "~0.13.5"
 CitableText = "~0.16.1"
 Kanones = "~0.23.0"
+OrderedCollections = "~1.6.2"
 Orthography = "~0.21.3"
 PlutoUI = "~0.7.52"
 PolytonicGreek = "~0.21.10"
+StatsBase = "~0.34.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -208,7 +246,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.1"
 manifest_format = "2.0"
-project_hash = "af172ed6f8f8e2cebac936b99fbee4a2f88f03d9"
+project_hash = "e01751138a7834859994b90c957c67c18f9e5ceb"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -911,7 +949,11 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
+# ╟─76d88b30-2bf4-438c-bb9e-df23741d250d
 # ╟─8ec3101b-4445-4062-af21-9e8dc28be17d
+# ╟─432adc07-d8f4-40d4-a820-c09a1eac13c0
+# ╟─9b009245-207f-4ee7-962c-515b54c879f6
+# ╟─292b5fb3-8df4-4090-918f-ec3507faff60
 # ╟─9a044052-7bfe-11ee-28d8-89db09636def
 # ╟─6f78ed85-ddd9-4034-9622-b574dc97368c
 # ╟─9620ac7f-c73f-4fd0-b1a9-19c46c225fdd
@@ -924,19 +966,20 @@ version = "17.4.0+0"
 # ╟─63241469-9aca-4d70-9e8e-83d101347e32
 # ╟─90d215ef-182c-4e04-8f7d-17b9b1bf5845
 # ╟─94e6a1a3-3b9d-4115-9240-a0291e3bf860
+# ╟─83631385-17fc-4293-8a49-2a94418bc2b1
 # ╟─26614bb2-dc3c-4a41-8712-374487e8743e
 # ╟─ce22ed61-b479-49ee-b107-b45da7ca291c
 # ╟─ddc7cdac-d6c8-4ca7-b3b5-d9f68787cbbe
-# ╠═1ea76ace-22b3-45c8-82aa-87c55b8cfa37
-# ╠═7ea41d42-a2a7-4122-be8f-2f6435289458
-# ╠═044f9c8a-f84a-491e-8114-b0ac248dfcda
-# ╠═1bf605a0-e97a-4e5f-8718-6abcd6bf1738
+# ╟─1ea76ace-22b3-45c8-82aa-87c55b8cfa37
+# ╟─7ea41d42-a2a7-4122-be8f-2f6435289458
+# ╟─044f9c8a-f84a-491e-8114-b0ac248dfcda
+# ╟─1bf605a0-e97a-4e5f-8718-6abcd6bf1738
 # ╟─5d4da4bc-97e3-4778-97d7-849e923e307d
 # ╟─a709069d-cb9d-4ba3-83db-b2870917bdcc
 # ╟─8426c84f-83cf-48ed-b4f9-9b323ccbc9b1
 # ╟─b635b3b9-8756-4ad8-a9ca-316802a7b611
 # ╟─d780227b-543f-480b-bf41-3eb02da67515
-# ╠═e34ac084-ef3f-4584-afe5-8dde95566b06
+# ╟─e34ac084-ef3f-4584-afe5-8dde95566b06
 # ╟─b16a3bdf-d1a9-4d88-9e22-e70a9608b7fd
 # ╟─d036d270-576a-4938-92e4-dc9b2aa583d1
 # ╟─1331e326-1f10-4e81-841c-8a922e54fc2c
